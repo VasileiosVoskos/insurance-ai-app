@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 from fpdf import FPDF
 import base64
 import os
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 # OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
@@ -16,25 +15,23 @@ st.set_page_config(page_title="AI Decision Support System", layout="wide")
 st.title("🚗 AI Decision Support System για Ασφαλιστικές")
 st.markdown("Ανέβασε Excel, ρώτησε το AI, πάρε business insights!")
 
-# Λειτουργία αποστολής email alerts
+# ✅ SendGrid function με Streamlit Secrets
 def send_email_alert(subject, body):
-    sender_email = "vvoskos@gmail.com"           # 👉 Βάλε εδώ το email σου
-    sender_password = "tsym ksth cbsj qhvs"         # 👉 Βάλε εδώ το App Password σου
-    receiver_email = "v.voskos@ethnikiasfalistiki.gr"     # 👉 Βάλε εδώ το email που θα λαμβάνει τα alerts
+    sendgrid_api_key = st.secrets["SENDGRID_API_KEY"]
+    sender_email = st.secrets["SENDGRID_SENDER_EMAIL"]
+    receiver_email = st.secrets["SENDGRID_RECEIVER_EMAIL"]
 
-    msg = MIMEMultipart()
-    msg["From"] = sender_email
-    msg["To"] = receiver_email
-    msg["Subject"] = subject
-
-    msg.attach(MIMEText(body, "plain"))
+    message = Mail(
+        from_email=sender_email,
+        to_emails=receiver_email,
+        subject=subject,
+        plain_text_content=body
+    )
 
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(sender_email, sender_password)
-            server.sendmail(sender_email, receiver_email, msg.as_string())
-        st.success("📧 Email alert εστάλη με επιτυχία!")
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+        st.success("📧 Email alert εστάλη με επιτυχία μέσω SendGrid!")
     except Exception as e:
         st.error(f"⚠️ Σφάλμα κατά την αποστολή email: {e}")
 
@@ -79,10 +76,9 @@ if uploaded_file:
         ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
         st.pyplot(fig)
 
-        # 🚨 Live Alerts: High Claim Amounts with dynamic threshold
+        # 🚨 Live Alerts με dynamic threshold
         st.subheader("🚨 Damage Control Alerts")
 
-        # Ρυθμιζόμενο όριο αποζημίωσης από τον χρήστη!
         alert_threshold = st.slider("🚦 Όρισε το όριο alert αποζημίωσης (€):", min_value=500, max_value=10000, value=3000, step=500)
 
         high_claims = df[df["Amount_EUR"] > alert_threshold]
@@ -91,7 +87,7 @@ if uploaded_file:
             st.error(f"⚠️ Προσοχή! Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
             st.dataframe(high_claims)
 
-            # ✅ Στέλνουμε και email alert!
+            # ✅ Στέλνουμε και email alert μέσω SendGrid!
             subject = "🚨 Damage Control Alert: Υψηλές Αποζημιώσεις!"
             body = f"Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€.\n\nΛεπτομέρειες:\n{high_claims.to_string(index=False)}"
             send_email_alert(subject, body)
@@ -99,7 +95,7 @@ if uploaded_file:
         else:
             st.success(f"✅ Καμία αποζημίωση δεν ξεπερνά το όριο των {alert_threshold}€!")
 
-        # Ερώτηση στον AI
+        # 🤖 AI Σύμβουλος
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
 
         if user_question:
@@ -122,7 +118,7 @@ if uploaded_file:
                 st.success("✅ Ο AI Σύμβουλός σου απαντά:")
                 st.write(response.choices[0].message.content)
 
-                # 📝 PDF Export Button
+                # 📄 PDF Export Button
                 if st.button("📄 Κατέβασε PDF Report"):
 
                     # Χρησιμοποιούμε το τοπικό αρχείο γραμματοσειράς από το repo
