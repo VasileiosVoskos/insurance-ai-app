@@ -27,6 +27,23 @@ if uploaded_file:
         st.subheader("📊 Τα δεδομένα σου:")
         st.dataframe(df)
 
+        # 🧩 Executive Summary
+        st.subheader("🧩 Executive Summary")
+
+        total_claims = df["Amount_EUR"].sum()
+        average_claim = df["Amount_EUR"].mean()
+        max_claim = df["Amount_EUR"].max()
+        min_claim = df["Amount_EUR"].min()
+        top_region = df.groupby("Region")["Amount_EUR"].sum().idxmax()
+
+        st.markdown(f"""
+        - **Σύνολο αποζημιώσεων:** {total_claims} €
+        - **Μέση αποζημίωση:** {average_claim:.2f} €
+        - **Μέγιστη αποζημίωση:** {max_claim} €
+        - **Ελάχιστη αποζημίωση:** {min_claim} €
+        - **Περιοχή με τις μεγαλύτερες αποζημιώσεις:** {top_region}
+        """)
+
         # 🎨 Γραφήματα αποζημιώσεων ανά περιοχή
         st.subheader("📊 Ανάλυση Δεδομένων:")
         region_sum = df.groupby("Region")["Amount_EUR"].sum()
@@ -37,16 +54,19 @@ if uploaded_file:
         ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
         st.pyplot(fig)
 
-        # 🚨 Live Alerts: High Claim Amounts
+        # 🚨 Live Alerts: High Claim Amounts with dynamic threshold
         st.subheader("🚨 Damage Control Alerts")
-        alert_threshold = 3000  # € threshold
+
+        # Ρυθμιζόμενο όριο αποζημίωσης από τον χρήστη!
+        alert_threshold = st.slider("🚦 Όρισε το όριο alert αποζημίωσης (€):", min_value=500, max_value=10000, value=3000, step=500)
+
         high_claims = df[df["Amount_EUR"] > alert_threshold]
 
         if not high_claims.empty:
             st.error(f"⚠️ Προσοχή! Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
             st.dataframe(high_claims)
         else:
-            st.success("✅ Καμία αποζημίωση δεν ξεπερνά το όριο ασφαλείας!")
+            st.success(f"✅ Καμία αποζημίωση δεν ξεπερνά το όριο των {alert_threshold}€!")
 
         # Ερώτηση στον AI
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
