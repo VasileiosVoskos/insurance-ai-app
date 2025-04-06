@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from fpdf import FPDF
 import base64
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
@@ -12,6 +15,28 @@ client = OpenAI(api_key=st.secrets["openai_api_key"])
 st.set_page_config(page_title="AI Decision Support System", layout="wide")
 st.title("🚗 AI Decision Support System για Ασφαλιστικές")
 st.markdown("Ανέβασε Excel, ρώτησε το AI, πάρε business insights!")
+
+# Λειτουργία αποστολής email alerts
+def send_email_alert(subject, body):
+    sender_email = "vvoskos@gmail.com"           # 👉 Βάλε εδώ το email σου
+    sender_password = "tsym ksth cbsj qhvs"         # 👉 Βάλε εδώ το App Password σου
+    receiver_email = "v.voskos@ethnikiasfalistiki.gr"     # 👉 Βάλε εδώ το email που θα λαμβάνει τα alerts
+
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
+
+    msg.attach(MIMEText(body, "plain"))
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.sendmail(sender_email, receiver_email, msg.as_string())
+        st.success("📧 Email alert εστάλη με επιτυχία!")
+    except Exception as e:
+        st.error(f"⚠️ Σφάλμα κατά την αποστολή email: {e}")
 
 # Upload Excel
 uploaded_file = st.file_uploader("📂 Ανέβασε το Excel αρχείο σου", type=["csv", "xlsx"])
@@ -65,6 +90,12 @@ if uploaded_file:
         if not high_claims.empty:
             st.error(f"⚠️ Προσοχή! Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
             st.dataframe(high_claims)
+
+            # ✅ Στέλνουμε και email alert!
+            subject = "🚨 Damage Control Alert: Υψηλές Αποζημιώσεις!"
+            body = f"Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€.\n\nΛεπτομέρειες:\n{high_claims.to_string(index=False)}"
+            send_email_alert(subject, body)
+
         else:
             st.success(f"✅ Καμία αποζημίωση δεν ξεπερνά το όριο των {alert_threshold}€!")
 
