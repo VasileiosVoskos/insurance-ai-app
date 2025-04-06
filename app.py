@@ -3,6 +3,8 @@ import pandas as pd
 from openai import OpenAI
 from io import StringIO
 import matplotlib.pyplot as plt
+from fpdf import FPDF
+import base64
 
 # OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
@@ -25,7 +27,7 @@ if uploaded_file:
         st.subheader("📊 Τα δεδομένα σου:")
         st.dataframe(df)
 
-        # 🎨 ΝΕΟ: Γραφήματα αποζημιώσεων ανά περιοχή
+        # 🎨 Γραφήματα αποζημιώσεων ανά περιοχή
         st.subheader("📊 Ανάλυση Δεδομένων:")
         region_sum = df.groupby("Region")["Amount_EUR"].sum()
 
@@ -57,36 +59,31 @@ if uploaded_file:
                 )
                 st.success("✅ Ο AI Σύμβουλός σου απαντά:")
                 st.write(response.choices[0].message.content)
-from fpdf import FPDF
-import base64
 
-# PDF Export
-if user_question:
-    if st.button("📄 Κατέβασε PDF Report"):
+                # 📝 PDF Export Button
+                if st.button("📄 Κατέβασε PDF Report"):
 
-        # Δημιουργούμε PDF
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=12)
+                    pdf = FPDF()
+                    pdf.add_page()
+                    pdf.set_font("Arial", size=12)
 
-        pdf.multi_cell(0, 10, "AI Decision Support Report\n", align='C')
-        pdf.multi_cell(0, 10, "Ερώτηση:", align='L')
-        pdf.multi_cell(0, 10, user_question, align='L')
-        pdf.multi_cell(0, 10, "\nΑπάντηση AI:", align='L')
-        pdf.multi_cell(0, 10, response.choices[0].message.content, align='L')
+                    pdf.multi_cell(0, 10, "AI Decision Support Report\n", align='C')
+                    pdf.multi_cell(0, 10, "Ερώτηση:", align='L')
+                    pdf.multi_cell(0, 10, user_question, align='L')
+                    pdf.multi_cell(0, 10, "\nΑπάντηση AI:", align='L')
+                    pdf.multi_cell(0, 10, response.choices[0].message.content, align='L')
 
-        pdf.multi_cell(0, 10, "\nΣύνοψη Δεδομένων:", align='L')
-        for index, row in df.iterrows():
-            pdf.multi_cell(0, 10, f"ID: {row['Claim_ID']}, Amount: {row['Amount_EUR']}€, Type: {row['Damage_Type']}, Region: {row['Region']}", align='L')
+                    pdf.multi_cell(0, 10, "\nΣύνοψη Δεδομένων:", align='L')
+                    for index, row in df.iterrows():
+                        pdf.multi_cell(0, 10, f"ID: {row['Claim_ID']}, Amount: {row['Amount_EUR']}€, Type: {row['Damage_Type']}, Region: {row['Region']}", align='L')
 
-        pdf.output("report.pdf")
+                    pdf.output("report.pdf")
 
-        # Streamlit download button
-        with open("report.pdf", "rb") as f:
-            base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                    with open("report.pdf", "rb") as f:
+                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
 
-        href = f'<a href="data:application/octet-stream;base64,{base64_pdf}" download="report.pdf">📥 Κατέβασε το PDF Report</a>'
-        st.markdown(href, unsafe_allow_html=True)
+                    href = f'<a href="data:application/octet-stream;base64,{base64_pdf}" download="report.pdf">📥 Κατέβασε το PDF Report</a>'
+                    st.markdown(href, unsafe_allow_html=True)
 
     except Exception as e:
         st.error(f"🚨 Προέκυψε πρόβλημα με το αρχείο: {e}")
