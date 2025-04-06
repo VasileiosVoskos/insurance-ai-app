@@ -4,3 +4,5 @@ pandas
 openpyxl
 matplotlib
 fpdf
+sendgrid
+python-http-client
