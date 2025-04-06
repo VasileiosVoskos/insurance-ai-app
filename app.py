@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
 from openai import OpenAI
-from io import StringIO
 import matplotlib.pyplot as plt
 from fpdf import FPDF
 import base64
+import os
 
 # OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
@@ -63,9 +63,20 @@ if uploaded_file:
                 # 📝 PDF Export Button
                 if st.button("📄 Κατέβασε PDF Report"):
 
+                    # Προσθέτουμε UTF-8 υποστήριξη γραμματοσειράς
                     pdf = FPDF()
                     pdf.add_page()
-                    pdf.set_font("Arial", size=12)
+
+                    # Κατεβάζουμε μια γραμματοσειρά που υποστηρίζει Ελληνικά (DejaVuSans)
+                    if not os.path.exists("DejaVuSans.ttf"):
+                        import urllib.request
+                        urllib.request.urlretrieve(
+                            "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf",
+                            "DejaVuSans.ttf"
+                        )
+
+                    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+                    pdf.set_font("DejaVu", size=12)
 
                     pdf.multi_cell(0, 10, "AI Decision Support Report\n", align='C')
                     pdf.multi_cell(0, 10, "Ερώτηση:", align='L')
