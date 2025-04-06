@@ -2,16 +2,16 @@ import streamlit as st
 import pandas as pd
 from openai import OpenAI
 from io import StringIO
+import matplotlib.pyplot as plt
 
-# OpenAI client - το API key θα το βάλουμε με Streamlit secrets για ασφάλεια
+# OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
-# Page settings
 st.set_page_config(page_title="AI Decision Support System", layout="wide")
 st.title("🚗 AI Decision Support System για Ασφαλιστικές")
 st.markdown("Ανέβασε Excel, ρώτησε το AI, πάρε business insights!")
 
-# File uploader
+# Upload Excel
 uploaded_file = st.file_uploader("📂 Ανέβασε το Excel αρχείο σου", type=["csv", "xlsx"])
 
 if uploaded_file:
@@ -22,31 +22,18 @@ if uploaded_file:
         else:
             df = pd.read_excel(uploaded_file)
 
-        # Εμφάνιση δεδομένων
         st.subheader("📊 Τα δεδομένα σου:")
         st.dataframe(df)
-        st.subheader("📊 Τα δεδομένα σου:")
-st.dataframe(df)
 
-# -------------------------------
-# 🎨 ΝΕΟ: Γραφήματα αποζημιώσεων ανά περιοχή
-import matplotlib.pyplot as plt
+        # 🎨 ΝΕΟ: Γραφήματα αποζημιώσεων ανά περιοχή
+        st.subheader("📊 Ανάλυση Δεδομένων:")
+        region_sum = df.groupby("Region")["Amount_EUR"].sum()
 
-st.subheader("📊 Ανάλυση Δεδομένων:")
-
-# Σύνολο αποζημιώσεων ανά περιοχή
-region_sum = df.groupby("Region")["Amount_EUR"].sum()
-
-fig, ax = plt.subplots()
-region_sum.plot(kind='bar', ax=ax)
-ax.set_ylabel("Σύνολο Αποζημιώσεων (€)")
-ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
-st.pyplot(fig)
-# -------------------------------
-
-# Υπάρχει ήδη παρακάτω το input για την ερώτηση στο AI, άστο ως έχει ✅
-user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
-
+        fig, ax = plt.subplots()
+        region_sum.plot(kind='bar', ax=ax)
+        ax.set_ylabel("Σύνολο Αποζημιώσεων (€)")
+        ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
+        st.pyplot(fig)
 
         # Ερώτηση στον AI
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
