@@ -37,6 +37,17 @@ if uploaded_file:
         ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
         st.pyplot(fig)
 
+        # 🚨 Live Alerts: High Claim Amounts
+        st.subheader("🚨 Damage Control Alerts")
+        alert_threshold = 3000  # € threshold
+        high_claims = df[df["Amount_EUR"] > alert_threshold]
+
+        if not high_claims.empty:
+            st.error(f"⚠️ Προσοχή! Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
+            st.dataframe(high_claims)
+        else:
+            st.success("✅ Καμία αποζημίωση δεν ξεπερνά το όριο ασφαλείας!")
+
         # Ερώτηση στον AI
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
 
@@ -63,18 +74,13 @@ if uploaded_file:
                 # 📝 PDF Export Button
                 if st.button("📄 Κατέβασε PDF Report"):
 
-                    # Κατεβάζουμε μια γραμματοσειρά που υποστηρίζει Ελληνικά (DejaVuSans)
-                    if not os.path.exists("DejaVuSans.ttf"):
-                        import urllib.request
-                        urllib.request.urlretrieve(
-                            "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/version_2_37/ttf/DejaVuSans.ttf",
-                            "DejaVuSans.ttf"
-                        )
+                    # Χρησιμοποιούμε το τοπικό αρχείο γραμματοσειράς από το repo
+                    current_dir = os.path.dirname(os.path.abspath(__file__))
+                    font_path = os.path.join(current_dir, "DejaVuSans.ttf")
 
-                    # Προσθέτουμε UTF-8 υποστήριξη γραμματοσειράς
                     pdf = FPDF()
                     pdf.add_page()
-                    pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
+                    pdf.add_font('DejaVu', '', font_path, uni=True)
                     pdf.set_font("DejaVu", size=12)
 
                     pdf.multi_cell(0, 10, "AI Decision Support Report\n", align='C')
