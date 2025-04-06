@@ -63,18 +63,17 @@ if uploaded_file:
                 # 📝 PDF Export Button
                 if st.button("📄 Κατέβασε PDF Report"):
 
-                    # Προσθέτουμε UTF-8 υποστήριξη γραμματοσειράς
-                    pdf = FPDF()
-                    pdf.add_page()
-
                     # Κατεβάζουμε μια γραμματοσειρά που υποστηρίζει Ελληνικά (DejaVuSans)
                     if not os.path.exists("DejaVuSans.ttf"):
                         import urllib.request
                         urllib.request.urlretrieve(
-                            "https://github.com/dejavu-fonts/dejavu-fonts/raw/master/ttf/DejaVuSans.ttf",
+                            "https://raw.githubusercontent.com/dejavu-fonts/dejavu-fonts/version_2_37/ttf/DejaVuSans.ttf",
                             "DejaVuSans.ttf"
                         )
 
+                    # Προσθέτουμε UTF-8 υποστήριξη γραμματοσειράς
+                    pdf = FPDF()
+                    pdf.add_page()
                     pdf.add_font('DejaVu', '', 'DejaVuSans.ttf', uni=True)
                     pdf.set_font("DejaVu", size=12)
 
