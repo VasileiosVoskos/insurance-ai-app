@@ -133,10 +133,7 @@ if uploaded_file:
 
         # ✅ Εκτίμηση πιθανής συνολικής αποζημίωσης (Impact Analysis)
 
-        # Υπολογισμός μέσης αποζημίωσης από υπάρχοντα claims
         average_payout = df["Amount_EUR"].mean()
-
-        # Εκτίμηση συνολικής έκθεσης
         estimated_total_exposure = num_affected * average_payout
 
         if num_affected > 0:
@@ -144,7 +141,6 @@ if uploaded_file:
         else:
             st.success("✅ Δεν υπάρχει εκτιμώμενη οικονομική έκθεση για το τρέχον γεγονός.")
 
-        # ✅ Εμπλουτισμένο email alert με impact analysis!
         if num_affected > 0:
             subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
             body = f"""
@@ -187,34 +183,25 @@ if uploaded_file:
                 st.success("✅ Ο AI Σύμβουλός σου απαντά:")
                 st.write(response.choices[0].message.content)
 
-                # ✅ PDF Export
-                if st.button("📄 Κατέβασε PDF Report"):
+        # ✅ Daily Report Button
+        st.subheader("📧 Daily Report")
 
-                    current_dir = os.path.dirname(os.path.abspath(__file__))
-                    font_path = os.path.join(current_dir, "DejaVuSans.ttf")
+        if st.button("📤 Στείλε Daily Report"):
+            subject = "📊 Daily Insurance Report"
+            body = f"""
+Daily Insurance Summary:
 
-                    pdf = FPDF()
-                    pdf.add_page()
-                    pdf.add_font('DejaVu', '', font_path, uni=True)
-                    pdf.set_font("DejaVu", size=12)
+- Σύνολο αποζημιώσεων: {total_claims} €
+- Μέση αποζημίωση: {average_claim:.2f} €
+- Μέγιστη αποζημίωση: {max_claim} €
+- Ελάχιστη αποζημίωση: {min_claim} €
+- Περιοχή με τις μεγαλύτερες αποζημιώσεις: {top_region}
 
-                    pdf.multi_cell(0, 10, "AI Decision Support Report\n", align='C')
-                    pdf.multi_cell(0, 10, "Ερώτηση:", align='L')
-                    pdf.multi_cell(0, 10, user_question, align='L')
-                    pdf.multi_cell(0, 10, "\nΑπάντηση AI:", align='L')
-                    pdf.multi_cell(0, 10, response.choices[0].message.content, align='L')
-
-                    pdf.multi_cell(0, 10, "\nΣύνοψη Δεδομένων:", align='L')
-                    for index, row in df.iterrows():
-                        pdf.multi_cell(0, 10, f"ID: {row['Claim_ID']}, Amount: {row['Amount_EUR']}€, Type: {row['Damage_Type']}, Region: {row['Region']}", align='L')
-
-                    pdf.output("report.pdf")
-
-                    with open("report.pdf", "rb") as f:
-                        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
-
-                    href = f'<a href="data:application/octet-stream;base64,{base64_pdf}" download="report.pdf">📥 Κατέβασε το PDF Report</a>'
-                    st.markdown(href, unsafe_allow_html=True)
+Εξωτερικό γεγονός: {external_event['Disaster_Type']} στην {external_event['Location']}
+Ενεργά συμβόλαια στην περιοχή: {num_affected}
+Εκτιμώμενη οικονομική έκθεση: περίπου {estimated_total_exposure:,.2f} €
+"""
+            send_email_alert(subject, body)
 
     except Exception as e:
         st.error(f"🚨 Προέκυψε πρόβλημα με το αρχείο: {e}")
