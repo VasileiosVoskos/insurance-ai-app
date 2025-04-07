@@ -134,6 +134,32 @@ if uploaded_file:
 
         else:
             st.success(f"✅ Δεν υπάρχουν ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
+# ✅ Εκτίμηση πιθανής συνολικής αποζημίωσης (Impact Analysis)
+
+# Υπολογισμός μέσης αποζημίωσης από υπάρχοντα claims
+average_payout = df["Amount_EUR"].mean()
+
+# Εκτίμηση συνολικής έκθεσης
+estimated_total_exposure = num_affected * average_payout
+
+if num_affected > 0:
+    st.warning(f"💰 Εκτιμώμενη Οικονομική Έκθεση: περίπου {estimated_total_exposure:,.2f} €")
+else:
+    st.success("✅ Δεν υπάρχει εκτιμώμενη οικονομική έκθεση για το τρέχον γεγονός.")
+
+# ✅ Εμπλουτίζουμε το email alert με impact analysis!
+if num_affected > 0:
+    subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
+    body = f"""
+Εξωτερικό γεγονός: {external_event['Disaster_Type']} στην {external_event['Location']}.
+Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών.
+
+💰 Εκτιμώμενη Οικονομική Έκθεση: περίπου {estimated_total_exposure:,.2f} €
+
+Λεπτομέρειες συμβολαίων:
+{affected_policies.to_string(index=False)}
+"""
+    send_email_alert(subject, body)
 
         # ✅ AI Σύμβουλος
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
