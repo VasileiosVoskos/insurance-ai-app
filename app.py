@@ -8,7 +8,10 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
-# Dummy ERP Data (Simulated!)
+# ✅ Streamlit secrets
+client = OpenAI(api_key=st.secrets["openai_api_key"])
+
+# ✅ Dummy ERP Data (Simulated!)
 erp_data = pd.DataFrame({
     "Policy_ID": range(1, 101),
     "Region": ["Καρδίτσα"] * 40 + ["Αθήνα"] * 30 + ["Θεσσαλονίκη"] * 30,
@@ -16,19 +19,11 @@ erp_data = pd.DataFrame({
     "Active": [True] * 100
 })
 
-# Simulated external event
+# ✅ Simulated external event
 external_event = {
     "Disaster_Type": "Πλημμύρα",
     "Location": "Καρδίτσα"
 }
-
-
-# OpenAI client
-client = OpenAI(api_key=st.secrets["openai_api_key"])
-
-st.set_page_config(page_title="AI Decision Support System", layout="wide")
-st.title("🚗 AI Decision Support System για Ασφαλιστικές")
-st.markdown("Ανέβασε Excel, ρώτησε το AI, πάρε business insights!")
 
 # ✅ SendGrid function με Streamlit Secrets
 def send_email_alert(subject, body):
@@ -50,12 +45,16 @@ def send_email_alert(subject, body):
     except Exception as e:
         st.error(f"⚠️ Σφάλμα κατά την αποστολή email: {e}")
 
-# Upload Excel
+# ✅ Streamlit setup
+st.set_page_config(page_title="AI Decision Support System", layout="wide")
+st.title("🚗 AI Decision Support System για Ασφαλιστικές")
+st.markdown("Ανέβασε Excel, δες ανάλυση, λάβε alerts και προτάσεις!")
+
+# ✅ File upload
 uploaded_file = st.file_uploader("📂 Ανέβασε το Excel αρχείο σου", type=["csv", "xlsx"])
 
 if uploaded_file:
     try:
-        # Διαβάζουμε το αρχείο
         if uploaded_file.name.endswith('.csv'):
             df = pd.read_csv(uploaded_file)
         else:
@@ -63,36 +62,8 @@ if uploaded_file:
 
         st.subheader("📊 Τα δεδομένα σου:")
         st.dataframe(df)
-        st.subheader("🌍 Εξωτερικά Γεγονότα & Εκτίμηση Ρίσκου")
 
-st.markdown(f"""
-- **Εξωτερικό Γεγονός:** {external_event['Disaster_Type']} στην {external_event['Location']}
-- Αναλύουμε δεδομένα ERP για πιθανή έκθεση...
-""")
-
-# Φιλτράρουμε ERP data για την περιοχή και την κάλυψη
-affected_policies = erp_data[
-    (erp_data["Region"] == external_event["Location"]) &
-    (erp_data["Coverage_Type"] == "Φυσικές Καταστροφές") &
-    (erp_data["Active"])
-]
-
-num_affected = affected_policies.shape[0]
-
-if num_affected > 0:
-    st.error(f"🚨 Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
-    st.dataframe(affected_policies)
-
-    # Μπορούμε να στείλουμε και email αν θέλεις!
-    subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
-    body = f"Υπάρχουν {num_affected} συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}.\nΠιθανή έκθεση: {num_affected} οχήματα."
-    send_email_alert(subject, body)
-
-else:
-    st.success(f"✅ Δεν υπάρχουν ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
-
-
-        # 🧩 Executive Summary
+        # ✅ Executive Summary
         st.subheader("🧩 Executive Summary")
 
         total_claims = df["Amount_EUR"].sum()
@@ -109,7 +80,7 @@ else:
         - **Περιοχή με τις μεγαλύτερες αποζημιώσεις:** {top_region}
         """)
 
-        # 🎨 Γραφήματα αποζημιώσεων ανά περιοχή
+        # ✅ Γράφημα
         st.subheader("📊 Ανάλυση Δεδομένων:")
         region_sum = df.groupby("Region")["Amount_EUR"].sum()
 
@@ -119,7 +90,7 @@ else:
         ax.set_title("Σύνολο Αποζημιώσεων ανά Περιοχή")
         st.pyplot(fig)
 
-        # 🚨 Live Alerts με dynamic threshold
+        # ✅ Damage Control Alerts
         st.subheader("🚨 Damage Control Alerts")
 
         alert_threshold = st.slider("🚦 Όρισε το όριο alert αποζημίωσης (€):", min_value=500, max_value=10000, value=3000, step=500)
@@ -127,10 +98,9 @@ else:
         high_claims = df[df["Amount_EUR"] > alert_threshold]
 
         if not high_claims.empty:
-            st.error(f"⚠️ Προσοχή! Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
+            st.error(f"⚠️ Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€:")
             st.dataframe(high_claims)
 
-            # ✅ Στέλνουμε και email alert μέσω SendGrid!
             subject = "🚨 Damage Control Alert: Υψηλές Αποζημιώσεις!"
             body = f"Υπάρχουν {len(high_claims)} αποζημιώσεις πάνω από {alert_threshold}€.\n\nΛεπτομέρειες:\n{high_claims.to_string(index=False)}"
             send_email_alert(subject, body)
@@ -138,15 +108,48 @@ else:
         else:
             st.success(f"✅ Καμία αποζημίωση δεν ξεπερνά το όριο των {alert_threshold}€!")
 
-        # 🤖 AI Σύμβουλος
+        # ✅ Simulation εξωτερικών γεγονότων
+        st.subheader("🌍 Εξωτερικά Γεγονότα & Εκτίμηση Ρίσκου")
+
+        st.markdown(f"""
+        - **Εξωτερικό Γεγονός:** {external_event['Disaster_Type']} στην {external_event['Location']}
+        - Αναλύουμε δεδομένα ERP για πιθανή έκθεση...
+        """)
+
+        affected_policies = erp_data[
+            (erp_data["Region"] == external_event["Location"]) &
+            (erp_data["Coverage_Type"] == "Φυσικές Καταστροφές") &
+            (erp_data["Active"])
+        ]
+
+        num_affected = affected_policies.shape[0]
+
+        if num_affected > 0:
+            st.error(f"🚨 Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
+            st.dataframe(affected_policies)
+
+            subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
+            body = f"Υπάρχουν {num_affected} συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}.\nΠιθανή έκθεση: {num_affected} οχήματα."
+            send_email_alert(subject, body)
+
+        else:
+            st.success(f"✅ Δεν υπάρχουν ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
+
+        # ✅ AI Σύμβουλος
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
 
         if user_question:
             with st.spinner('🧠 Το AI σκέφτεται...'):
                 prompt = f"""
                 Είσαι ένας έμπειρος σύμβουλος για ασφαλιστικές εταιρείες.
-                Σου δίνω τα εξής δεδομένα:
+                Σου δίνω τα εξής δεδομένα claims:
                 {df.to_string(index=False)}
+
+                Σου δίνω και δεδομένα ERP συμβολαίων:
+                {erp_data.to_string(index=False)}
+
+                Και το εξωτερικό γεγονός:
+                {external_event['Disaster_Type']} στην {external_event['Location']}
 
                 Ερώτηση:
                 {user_question}
@@ -161,10 +164,9 @@ else:
                 st.success("✅ Ο AI Σύμβουλός σου απαντά:")
                 st.write(response.choices[0].message.content)
 
-                # 📄 PDF Export Button
+                # ✅ PDF Export
                 if st.button("📄 Κατέβασε PDF Report"):
 
-                    # Χρησιμοποιούμε το τοπικό αρχείο γραμματοσειράς από το repo
                     current_dir = os.path.dirname(os.path.abspath(__file__))
                     font_path = os.path.join(current_dir, "DejaVuSans.ttf")
 
