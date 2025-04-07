@@ -128,29 +128,26 @@ if uploaded_file:
             st.error(f"🚨 Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
             st.dataframe(affected_policies)
 
-            subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
-            body = f"Υπάρχουν {num_affected} συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}.\nΠιθανή έκθεση: {num_affected} οχήματα."
-            send_email_alert(subject, body)
-
         else:
             st.success(f"✅ Δεν υπάρχουν ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
-# ✅ Εκτίμηση πιθανής συνολικής αποζημίωσης (Impact Analysis)
 
-# Υπολογισμός μέσης αποζημίωσης από υπάρχοντα claims
-average_payout = df["Amount_EUR"].mean()
+        # ✅ Εκτίμηση πιθανής συνολικής αποζημίωσης (Impact Analysis)
 
-# Εκτίμηση συνολικής έκθεσης
-estimated_total_exposure = num_affected * average_payout
+        # Υπολογισμός μέσης αποζημίωσης από υπάρχοντα claims
+        average_payout = df["Amount_EUR"].mean()
 
-if num_affected > 0:
-    st.warning(f"💰 Εκτιμώμενη Οικονομική Έκθεση: περίπου {estimated_total_exposure:,.2f} €")
-else:
-    st.success("✅ Δεν υπάρχει εκτιμώμενη οικονομική έκθεση για το τρέχον γεγονός.")
+        # Εκτίμηση συνολικής έκθεσης
+        estimated_total_exposure = num_affected * average_payout
 
-# ✅ Εμπλουτίζουμε το email alert με impact analysis!
-if num_affected > 0:
-    subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
-    body = f"""
+        if num_affected > 0:
+            st.warning(f"💰 Εκτιμώμενη Οικονομική Έκθεση: περίπου {estimated_total_exposure:,.2f} €")
+        else:
+            st.success("✅ Δεν υπάρχει εκτιμώμενη οικονομική έκθεση για το τρέχον γεγονός.")
+
+        # ✅ Εμπλουτισμένο email alert με impact analysis!
+        if num_affected > 0:
+            subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
+            body = f"""
 Εξωτερικό γεγονός: {external_event['Disaster_Type']} στην {external_event['Location']}.
 Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών.
 
@@ -159,7 +156,7 @@ if num_affected > 0:
 Λεπτομέρειες συμβολαίων:
 {affected_policies.to_string(index=False)}
 """
-    send_email_alert(subject, body)
+            send_email_alert(subject, body)
 
         # ✅ AI Σύμβουλος
         user_question = st.text_input("✍️ Κάνε την ερώτησή σου στο AI:")
