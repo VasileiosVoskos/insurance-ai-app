@@ -8,6 +8,21 @@ import os
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 
+# Dummy ERP Data (Simulated!)
+erp_data = pd.DataFrame({
+    "Policy_ID": range(1, 101),
+    "Region": ["Καρδίτσα"] * 40 + ["Αθήνα"] * 30 + ["Θεσσαλονίκη"] * 30,
+    "Coverage_Type": ["Φυσικές Καταστροφές"] * 60 + ["Κλοπή"] * 40,
+    "Active": [True] * 100
+})
+
+# Simulated external event
+external_event = {
+    "Disaster_Type": "Πλημμύρα",
+    "Location": "Καρδίτσα"
+}
+
+
 # OpenAI client
 client = OpenAI(api_key=st.secrets["openai_api_key"])
 
@@ -48,6 +63,34 @@ if uploaded_file:
 
         st.subheader("📊 Τα δεδομένα σου:")
         st.dataframe(df)
+        st.subheader("🌍 Εξωτερικά Γεγονότα & Εκτίμηση Ρίσκου")
+
+st.markdown(f"""
+- **Εξωτερικό Γεγονός:** {external_event['Disaster_Type']} στην {external_event['Location']}
+- Αναλύουμε δεδομένα ERP για πιθανή έκθεση...
+""")
+
+# Φιλτράρουμε ERP data για την περιοχή και την κάλυψη
+affected_policies = erp_data[
+    (erp_data["Region"] == external_event["Location"]) &
+    (erp_data["Coverage_Type"] == "Φυσικές Καταστροφές") &
+    (erp_data["Active"])
+]
+
+num_affected = affected_policies.shape[0]
+
+if num_affected > 0:
+    st.error(f"🚨 Υπάρχουν {num_affected} ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
+    st.dataframe(affected_policies)
+
+    # Μπορούμε να στείλουμε και email αν θέλεις!
+    subject = f"🚨 Προειδοποίηση: {external_event['Disaster_Type']} στην {external_event['Location']}"
+    body = f"Υπάρχουν {num_affected} συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}.\nΠιθανή έκθεση: {num_affected} οχήματα."
+    send_email_alert(subject, body)
+
+else:
+    st.success(f"✅ Δεν υπάρχουν ενεργά συμβόλαια με κάλυψη φυσικών καταστροφών στην {external_event['Location']}!")
+
 
         # 🧩 Executive Summary
         st.subheader("🧩 Executive Summary")
