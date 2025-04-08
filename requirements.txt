@@ -1,8 +1,7 @@
 streamlit
-openai
 pandas
-openpyxl
 matplotlib
+openai
 fpdf
 sendgrid
-python-http-client
+Pillow
