@@ -173,3 +173,5 @@ elif menu == "Settings":
     st.markdown("Εδώ μπορείτε να ρυθμίσετε τα API keys και τις παραμέτρους της εφαρμογής σας.")
     st.info("Για αλλαγές στα API keys, χρησιμοποιήστε το Streamlit Cloud secrets.")
 
+# Minor update to trigger deploy
+
